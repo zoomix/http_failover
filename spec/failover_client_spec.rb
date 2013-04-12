@@ -9,20 +9,25 @@ describe FailoverClient do
     end
 
     it 'Connects to the first server by default' do
+      request = stub_request(:get, "http://apa/something")
       failover_client.get('/something')
-      stub_request(:get, 'http://apa/something').should have_been_requested
+      request.should have_been_requested
     end
     it 'Connects to the first and then the second' do
+      request_a = stub_request(:get, 'http://apa/something')
+      request_b = stub_request(:get, 'http://bepa:1337/something')
+
       2.times {failover_client.get('/something')}
-      failover_client.get('/something')
-      stub_request(:get, 'http://apa/something').should have_been_requested
-      stub_request(:get, 'http://bepa:1337/something').should have_been_requested
+      request_a.should have_been_requested
+      request_b.should have_been_requested
     end
     it 'Connects to the first, then second, then first again' do
-      3.times { failover_client.get('/something') }
-      stub_request(:get, 'http://apa/something').should have_been_requested
-      stub_request(:get, 'http://bepa:1337/something').should have_been_requested
-      stub_request(:get, 'http://apa/something').should have_been_requested
+      request_a = stub_request(:get, 'http://apa/something')
+      request_b = stub_request(:get, 'http://bepa:1337/something')
+      
+      3.times {failover_client.get('/something')}
+      request_a.should have_been_requested.times(2)
+      request_b.should have_been_requested
     end
   end
 
