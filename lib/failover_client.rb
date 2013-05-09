@@ -8,9 +8,10 @@ class FailoverClient
 
   def get(uri, options={})
     url = get_base_uri + uri
-    HTTParty.get(url, options)
+    response = HTTParty.get(url, options)
+    raise HttpClienError.new(response.code, response.body, response.headers) if (400..499).cover? response.code
+    response
   end
-
 
   private
 
@@ -18,5 +19,16 @@ class FailoverClient
     base_uri = @base_uris[@request_counter % @base_uris.size]
     @request_counter += 1
     base_uri
+  end
+end
+
+class HttpClienError < StandardError
+  attr :code, :status, :body, :headers
+  def initialize(code, body, headers)
+    super("code: #{code}, body: #{body}")
+    @code = code
+    @status = code
+    @body = body
+    @headers = headers
   end
 end
