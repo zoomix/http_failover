@@ -10,24 +10,26 @@ class FailoverClient
 
   def get(uri, options={})
     url = get_base_uri + uri
-    begin
-      response = HTTParty.get(url, options)
-      @retry = 0
-    rescue Timeout::Error => e
-      if @retry < @retry_timeouts.count 
-        sleep @retry_timeouts[@retry]
-        @retry += 1
-        response = get(uri)
-      else
-        raise e
-      end
-    end
+    response = HTTParty.get(url, options)
+    @retry = 0
 
     raise HttpClienError.new(response.code, response.body, response.headers) if (400..499).cover? response.code
     response
+  rescue Timeout::Error => e
+    response = retryer(e, uri)
   end
 
   private
+
+  def retryer(error, uri)
+    if @retry < @retry_timeouts.count 
+      sleep @retry_timeouts[@retry]
+      @retry += 1
+      get(uri)
+    else
+      raise error
+    end
+  end
 
   def get_base_uri
     base_uri = @base_uris[@request_counter % @base_uris.size]
