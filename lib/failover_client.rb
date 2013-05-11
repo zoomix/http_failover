@@ -11,11 +11,11 @@ class FailoverClient
   def get(uri, options={})
     url = get_base_uri + uri
     response = HTTParty.get(url, options)
+    raise HttpClientError.new(response.code, response.body, response.headers) if (400..499).cover? response.code
+    raise HttpServerError.new(response.code, response.body, response.headers) if (500..599).cover? response.code
     @retry = 0
-
-    raise HttpClienError.new(response.code, response.body, response.headers) if (400..499).cover? response.code
     response
-  rescue Timeout::Error => e
+  rescue Timeout::Error, HttpServerError => e
     response = retryer(e, uri)
   end
 
@@ -38,7 +38,7 @@ class FailoverClient
   end
 end
 
-class HttpClienError < StandardError
+class HttpClientError < StandardError
   attr :code, :status, :body, :headers
   def initialize(code, body, headers)
     super("code: #{code}, body: #{body}")
@@ -48,3 +48,4 @@ class HttpClienError < StandardError
     @headers = headers
   end
 end
+class HttpServerError < HttpClientError; end;

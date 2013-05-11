@@ -23,10 +23,10 @@ That'll give you the default 3 timeouts with default back-offs of 1, 5, 5. That 
 ### Working:
  - Round robin get-request
  - Handles timeouts
+ - Retries on 5xx
 
 ### Future:
  - Retires on network errors
- - Retries on 5xx
  - post/delete/put requests
  - Dynamic end_point update
 
